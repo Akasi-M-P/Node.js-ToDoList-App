@@ -66,6 +66,11 @@ app.post("/work", (req, res) => {
 })
 
 
+app.get('/about' , (req, res) => {
+    res.render('about');
+})
+
+
 app.listen(port, () => {
   console.log(`app listening on port ${port}`)
 });
