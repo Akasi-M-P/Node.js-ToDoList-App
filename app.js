@@ -3,11 +3,16 @@ const bodyParser = require("body-parser")
 
 const app = express()
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
 
 app.set('view engine', 'ejs');
 const port = 9000
 
 let items = [];
+let workItems = [];
+
+
+
 
 app.get('/', (req, res) => {
 
@@ -24,24 +29,43 @@ app.get('/', (req, res) => {
 
 
 
-        res.render("list", {kindOfDay: day, newItems: items});
+        res.render("list", {listTitle: day, newItems: items});
    
 });
 
 
+
+
 app.post('/', (req, res) => {
 
-    let addToList = "";
+  
     let item = req.body.addToList; 
 
-   items.push(item)
+    if(req.body.list === "Work"){
+        workItems.push(item);
+        res.redirect("/work")
 
-    res.render("list", {newItem: addToList});
-    res.redirect('/');
+    } else {
+        items.push(item)
+        res.redirect('/');
+       
+    }
 
+  
 });
+
+app.get('/work', (req, res) => {
+    res.render('list', {listTitle: "Work List", newItems:workItems});
+})
+
+
+app.post("/work", (req, res) => {
+    let item = req.body.newItems;
+    workItems.push(item);
+    res.redirect('/work');
+})
 
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`app listening on port ${port}`)
 });
