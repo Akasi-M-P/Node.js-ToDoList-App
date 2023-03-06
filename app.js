@@ -1,19 +1,16 @@
+//jshint esversion:6
 
-const express = require("express")
-const bodyParser = require("body-parser")
+const express = require("express");
+const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
-// const date = require("./myModule");
+const _ = require("lodash");
 
-// create an instance of an express app
-const app = express()
+const app = express();
 
+app.set('view engine', 'ejs');
 
-// use body-parser to parse the request body
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// serve static files (e.g. css, images) from the "public" folder
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
-
 
 // Set `strictQuery: false` to globally opt into filtering by properties that aren't in the schema
 // Included because it removes preparatory warnings for Mongoose 7.
@@ -39,96 +36,125 @@ const itemsSchema = new Schema({
 // Compile model from schema
 const Item = mongoose.model("Item", itemsSchema);
 
-const item1 = new Item({
-    name: "Welcome"
-});
+// const item1 = new Item({
+//     name: "Welcome"
+// });
 
-const item2 = new Item({
-    name: "Hit + for new item"
-});
+// const item2 = new Item({
+//     name: "Hit + for new item"
+// });
 
-const item3 = new Item({
-    name: "Delete"
-});
+// const item3 = new Item({
+//     name: "Delete"
+// });
 
+const defaultItems = [];
 
-const defaultItems = [item1, item2, item3];
+const listSchema = {
+  name: String,
+  items: [itemsSchema]
+};
 
+const List = mongoose.model('List', listSchema);
 
-
-
-
-
-// set the view engine to ejs
-app.set('view engine', 'ejs');
-
-// set the port for the app to listen on
-const port = 9000
-
-// // define an array for the items to be added to the to-do list
-// const items = [];
-
-// // define an array for the items to be added to the work list
-// const workItems = [];
-
-
-// when a GET request is made to the root path ('/'), render the "list" template
-app.get('/', (req, res) => {
-
-//    let day = date.getDate();
-
-    // render the "list" template and pass the "day" and "items" arrays as variables
-    res.render("list", {listTitle: "Today", newItems: items});
-   
-});
-
-
-// when a POST request is made to the root path ('/'), add an item to the to-do list or work list
-app.post('/', (req, res) => {
-
-   // get the item from the request body
-    let item = req.body.addToList; 
-
-    // check the value of the "list" property in the request body
-    // if it's "Work", add the item to the work list and redirect to the "/work" route
-    if(req.body.list === "Work"){
-        workItems.push(item);
-        res.redirect("/work")
-
-    // if it's not "Work", add the item to the to-do list and redirect to the root path
+app.get("/", function(req, res) {
+  Item.find({}, function(err, foundItems){
+    if (err) {
+      console.log(err);
     } else {
-        items.push(item)
-        res.redirect('/');
-       
+      if (foundItems.length === 0 && defaultItems.length === 0) {
+        res.render("list", {listTitle: "Today", newListItems: []});
+      } else if (foundItems.length === 0) {
+        Item.insertMany(defaultItems, function(err){
+          if (err) {
+            console.log(err);
+          } else {
+            console.log("Successfully saved default items to DB.");
+          }
+          res.redirect("/");
+        });
+      } else {
+        res.render("list", {listTitle: "Today", newListItems: foundItems});
+      }
     }
+  });
+});
 
+
+
+app.get("/:customListName", function(req, res) {
+ const customListName = _.capitalize(req.params.customListName);
+
+  List.findOne({name: customListName}, function(err, foundList) {
+    if (!err) {
+      if(!foundList){
+
+        const list = new List({
+          name: customListName,
+          items: defaultItems,
+        });
+
+        list.save();
+        res.redirect("/"  + customListName)
+      } else {
+       
+        res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
+      }
+    }
+  })
+  
+ 
+
+ 
+});
+
+
+
+app.post("/", function(req, res){
+
+  const itemName = req.body.newItem;
+  const listName = req.body.list;
+  const item = new Item({
+    name: itemName 
+  });
+    
+    if (listName === "Today"){
+      item.save();
+      res.redirect("/");
+    } else {
+      List.findOne({name: listName}, function(err, foundList){
+        foundList.items.push(item);
+        foundList.save();
+        res.redirect("/" + listName);
+      })
+    }
+   
   
 });
 
-// when a GET request is made to the "/work" route, render the "list" template for the work list
-app.get('/work', (req, res) => {
-    res.render('list', {listTitle: "Work List", newItems:workItems});
-})
 
-// when a POST request is made to the "/work" route, add an item to the work list
-app.post("/work", (req, res) => {
-    let item = req.body.newItems;
-    workItems.push(item);
-    res.redirect('/work');
-})
+app.post("/delete", (req, res) => {
+  const checkedItemId = req.body.checkbox;
+  const listName = req.body.listName;
 
-// when a GET request is made to the "/about" route, render the "about" template
-app.get('/about' , (req, res) => {
-    res.render('about');
-})
+   if (listName === "Today"){
+    Item.findByIdAndRemove(checkedItemId, function (err){
+      if (!err) {
+        console.log("Successfully deleted");
+  
+        res.redirect("/");
+   }
+  });
+} else {
+  List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, function(err, foundList){
+    if (!err){
+      res.redirect("/" + listName);
+    }
+  });
+}
+});
 
-// start the app and log a message to the console when it's ready
 
-
-
-
-
-
-app.listen(port, () => {
-  console.log(`app listening on port ${port}`)
+app.listen(3000, function() {
+  console.log("Server started on port 3000");
 });

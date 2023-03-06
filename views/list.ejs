@@ -11,7 +11,7 @@
 
     <div class="box">
         <form class="item" action="/" method="POST">
-            <input type="text" name="addToList" placeholder="New Item" autocomplete="off">
+            <input type="text" name="newItem" placeholder="New Item" autocomplete="off">
             <!-- This creates a text input field with the name "addToList", a placeholder text "New Item", and the autocomplete attribute set to "off". -->
             <button type="submit" name="list" value=<%= listTitle %> > + </button>
             <!-- This creates a submit button with the name "list" and a value equal to the value of "listTitle". The text on the button is "+". -->
@@ -19,15 +19,17 @@
 
 <!-- This creates a form that has class "item". The form submits to the root URL "/" using the POST method. -->
 
-        <% for(let i = 0; i< newItems.length; i++) { %>
-        <div class="item">
-            <input type="checkbox">
-            <!-- This creates a checkbox input field. -->
-
-             <p> <%= newItems[i] %> </p>
-            <!-- This displays the i-th element of the "newItems" array in a paragraph tag. -->
-        </div>
-        <% } %>
+        <% newListItems.forEach(function(item) { %>
+            <form action="/delete" method="post">
+                <div class="item">
+                    <input type="checkbox"name="checkbox" value="<%=item._id%>" onChange="this.form.submit()">
+                    <p><%=item.name%></p>
+                </div>
+                <input type="hidden" name="listName" value="<%= listTitle %>">
+            </form>
+            
+        <% })  %>
+        
 
 <!-- This for loop iterates over the "newItems" array, creating a div with class "item" for each element of the array. Within each div, it creates a checkbox and displays the current element in a paragraph tag. -->
 
