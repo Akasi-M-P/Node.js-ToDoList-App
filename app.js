@@ -18,7 +18,7 @@ app.use(express.static("public"));
 mongoose.set('strictQuery', false);
 
 // Define the database URL to connect to.
-const mongoDB = "mongodb://127.0.0.1/todolistDB";
+const mongoDB = "mongodb+srv://myfirstclusterusername:1FxowsCRyipx0mcv@myfirstcluster.1pfd8uq.mongodb.net/todolistDB";
 
 // Wait for database to connect, logging an error if there is a problem 
 main().catch(err => console.log(err));
