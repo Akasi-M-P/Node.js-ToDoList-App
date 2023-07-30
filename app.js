@@ -37,17 +37,7 @@ const itemsSchema = new Schema({
 // Compile model from schema
 const Item = mongoose.model("Item", itemsSchema);
 
-// const item1 = new Item({
-//     name: "Welcome"
-// });
 
-// const item2 = new Item({
-//     name: "Hit + for new item"
-// });
-
-// const item3 = new Item({
-//     name: "Delete"
-// });
 
 const defaultItems = [];
 
